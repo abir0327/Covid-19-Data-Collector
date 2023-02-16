@@ -1,0 +1,247 @@
+drop table patients;
+drop table quarentine;
+drop table hospitals;
+drop table treatment;
+
+--table creation
+create table treatment(
+       treatment_id int not null primary key,
+       treatment_type varchar(20) not null
+ );
+
+create table hospitals(
+    hospital_id int not null primary key,
+    hospital_name varchar(30) not null,
+    board_head varchar(30) not null,
+    capacity int not null,
+    treatment_id int not null,
+    FOREIGN KEY (treatment_id) REFERENCES treatment
+);
+
+create table quarentine(
+    place_id int not null primary key,
+    place_name varchar(20) not null,
+    room_no int not null,
+    admit_date varchar(20) not null,
+    discharge_date varchar(20) not null,
+    hospital_id int not null,
+    FOREIGN KEY (hospital_id) REFERENCES hospitals
+);
+
+create table patients(
+    patient_id int not null primary key,
+    patient_name varchar(30) not null,
+    age int not null,
+    gender varchar(30) not null,
+    patient_address varchar(30) not null,
+    contact_num int not null,
+    treatment_id int not null,
+    hospital_id int not null,
+    place_id int not null,
+    FOREIGN KEY (treatment_id) REFERENCES treatment,
+    FOREIGN KEY (hospital_id) REFERENCES hospitals,
+    FOREIGN KEY (place_id) REFERENCES quarentine
+);
+
+--insertion
+insert into treatment values(11,'S');
+insert into treatment values(12,'O');
+
+insert into hospitals values(1111,'City medical','Dr Mamun',350,11);
+insert into hospitals values(1112,'Gazi medical','Dr Aminul',550,12);
+insert into hospitals values(1113,'Islami Bank Hospital','Dr saha',650,11);
+insert into hospitals values(1114,'Ad Din Hospital','Dr sultana',400,12);
+
+insert into quarentine values(111,'Ab',101,'10-02-20','20-02-20',1111);
+insert into quarentine values(112,'Ac',102,'12-02-20','22-02-20',1112);
+insert into quarentine values(113,'Ad',103,'14-02-20','24-02-20',1113);
+insert into quarentine values(114,'Ae',104,'16-02-20','26-02-20',1114);
+insert into quarentine values(115,'Af',105,'18-02-20','28-02-20',1111);
+insert into quarentine values(116,'Ag',106,'20-02-20','30-02-20',1112);
+
+insert into patients values(1,'Abdur rahman',35,'M','25/5 A.k. main road,khulna',01745,11,1111,111);
+insert into patients values(2,'Bosir uddin',55,'M','27/3 Boshupara road',01746,12,1112,112);
+insert into patients values(3,'Kamrul hasan',70,'M','13/9 Raipara road',01945,12,1113,113);
+insert into patients values(4,'Gias mahmud',45,'M','15/2 Gogonbabu main road',01842,11,1114,114);
+insert into patients values(5,'shofiq shah',63,'M','16/6 Alaipur main road',01975,11,1111,115);
+insert into patients values(6,'Shahnara islam',30,'F','26/5 Nirala main road',01445,12,1112,116);
+
+
+
+select * from patients;
+select * from hospitals;
+select * from quarentine;
+select * from treatment;
+
+
+--update
+update patients
+set patient_name='Rohim'
+where patient_id=1;
+
+--alter
+alter table patients
+drop column gender;
+
+--check
+ALTER TABLE patients
+ADD CHECK (age>=18);
+
+--delete
+delete from patients
+where patient_id=1;
+
+--union all
+select hospital_id from hospitals
+union all
+select hospital_id from quarentine
+order by hospital_id;
+
+--intersect
+select patients.patient_name,quarentine.place_name,quarentine.room_no
+from patients left join quarentine on patients.place_id=quarentine.place_id
+intersect
+select patients.patient_name,quarentine.place_name,quarentine.room_no
+from patients right join quarentine on patients.place_id=quarentine.place_id;
+
+--inner join
+select patients.patient_id,patients.patient_name,hospitals.hospital_name,quarentine.place_name
+from ((patients inner join hospitals on patients.hospital_id=hospitals.hospital_id)
+inner join quarentine on patients.place_id=quarentine.place_id);
+
+--leftjoin
+select patients.patient_name,quarentine.place_name,quarentine.room_no
+from patients left join quarentine on patients.place_id=quarentine.place_id;
+
+--rightjoin
+select hospitals.hospital_name,hospitals.board_head,treatment.treatment_type
+from hospitals right join treatment on hospitals.treatment_id=treatment.treatment_id;
+
+
+--PL/SQL
+set SERVEROUTPUT on
+DECLARE
+    admitted_patient patients.patient_id%type;
+    capa hospitals.capacity%type;
+    available_seat patients.patient_id%type;
+BEGIN
+    select count(patient_id) into admitted_patient
+    from patients where hospital_id=1111;
+    select sum(capacity) into capa 
+    from hospitals where hospital_id=1111;
+    available_seat:= capa-admitted_patient;
+    DBMS_OUTPUT.PUT_LINE('Admitted patients in City Medical :' || admitted_patient);
+    DBMS_OUTPUT.PUT_LINE('Available seat :' || available_seat);
+    select count(patient_id) into admitted_patient
+    from patients where hospital_id=1112;
+    select sum(capacity) into capa 
+    from hospitals where hospital_id=1112;
+    available_seat:= capa-admitted_patient;
+    DBMS_OUTPUT.PUT_LINE('Admitted patients in Gazi Medical :' || admitted_patient);
+    DBMS_OUTPUT.PUT_LINE('Available seat :' || available_seat);
+    select count(patient_id) into admitted_patient
+    from patients where hospital_id=1113;
+    select sum(capacity) into capa 
+    from hospitals where hospital_id=1113;
+    available_seat:= capa-admitted_patient;
+    DBMS_OUTPUT.PUT_LINE('Admitted patients in Islami Bank Hospital :' || admitted_patient);
+    DBMS_OUTPUT.PUT_LINE('Available seat :' || available_seat);
+    select count(patient_id) into admitted_patient
+    from patients where hospital_id=1114;
+    select sum(capacity) into capa 
+    from hospitals where hospital_id=1114;
+    available_seat:= capa-admitted_patient;
+    DBMS_OUTPUT.PUT_LINE('Admitted patients in Ad din hospital :' || admitted_patient);
+    DBMS_OUTPUT.PUT_LINE('Available seat :' || available_seat);
+END;
+/
+
+--For loop
+SET SERVEROUTPUT ON
+DECLARE
+   counter    NUMBER(2):=1;
+   p_name     patients.patient_name%TYPE;
+  
+BEGIN
+
+   FOR counter IN 1..4
+   LOOP
+
+      SELECT patient_name
+      INTO p_name
+      FROM patients
+      WHERE
+      patient_id = counter;
+
+      DBMS_OUTPUT.PUT_LINE ('Patient_id ' || counter);
+      DBMS_OUTPUT.PUT_LINE ('Patient_name'|| p_name);
+      DBMS_OUTPUT.PUT_LINE ('-----------');
+   END LOOP;
+
+   EXCEPTION
+      WHEN others THEN
+         DBMS_OUTPUT.PUT_LINE (SQLERRM);
+END;
+/
+
+--while loop
+
+SET SERVEROUTPUT ON
+DECLARE
+   counter    patients.patient_id%type;
+   p_age       patients.age%TYPE;
+  
+BEGIN
+
+   WHILE counter <= 4
+   LOOP
+
+      SELECT age
+      INTO p_age
+      FROM patients
+      WHERE
+      patient_id = counter;
+
+      DBMS_OUTPUT.PUT_LINE ('Record ' || counter);
+      DBMS_OUTPUT.PUT_LINE ('Patient Name' || '-' ||p_age );
+      DBMS_OUTPUT.PUT_LINE ('-----------');
+
+      counter := counter + 1 ;
+
+   END LOOP;
+END;
+/
+
+--procedure
+CREATE OR REPLACE PROCEDURE add_treatment (
+treatment_id treatment.treatment_id%TYPE,
+treatment_type treatment.treatment_type%TYPE) IS
+BEGIN
+INSERT INTO treatment (treatment_id, treatment_type)
+VALUES (treatment_id, treatment_type);
+COMMIT;
+END add_treatment;
+/
+SHOW ERRORS
+
+BEGIN
+add_treatment(13,'X');
+END;
+/
+
+--cursor
+set SERVEROUTPUT on
+DECLARE
+cursor patient_info IS
+select patient_name,age,patient_address from patients;
+patient_status patient_info%rowtype;
+Begin
+open patient_info;
+      LOOP
+         fetch patient_info into patient_status;
+         exit when patient_info%rowcount > 4;
+         DBMS_OUTPUT.PUT_LINE('Name' || patient_status.patient_name || 'Age' || patient_status.age || 'Address' || patient_status.patient_address);
+     End loop;
+close patient_info;    
+END;
+/  
